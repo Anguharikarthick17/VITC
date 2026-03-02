@@ -1,1 +1,10 @@
-/*  /index.html  200
+[[redirects]]
+  from = "/api/*"
+  to = "http://localhost:5001/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
