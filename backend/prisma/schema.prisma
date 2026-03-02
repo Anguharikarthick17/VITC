@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  STATE_ADMIN
+  OFFICER
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum Status {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+  ESCALATED
+}
+
+enum Category {
+  ROAD_DAMAGE
+  WATER_SUPPLY
+  ELECTRICITY
+  SANITATION
+  PUBLIC_SAFETY
+  NOISE_POLLUTION
+  ILLEGAL_CONSTRUCTION
+  GARBAGE
+  TRAFFIC
+  STREET_LIGHTING
+  PARK_MAINTENANCE
+  DRAINAGE_FLOODING
+  AIR_POLLUTION
+  ANIMAL_CONTROL
+  PUBLIC_TRANSPORT
+  BUILDING_SAFETY
+  FIRE_HAZARD
+  OTHER
+}
+
+model User {
+  id           String         @id @default(uuid())
+  name         String
+  email        String         @unique
+  password     String
+  role         Role           @default(OFFICER)
+  state        String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  assignedComplaints Complaint[] @relation("AssignedOfficer")
+  complaintLogs ComplaintLog[]
+
+  @@map("users")
+}
+
+model Complaint {
+  id           String         @id @default(uuid())
+  title        String
+  description  String
+  category     Category
+  severity     Severity
+  state        String
+  city         String
+  address      String
+  contact      String
+  email        String
+  status       Status         @default(PENDING)
+  image        String?
+  assignedToId String?
+  assignedTo   User?          @relation("AssignedOfficer", fields: [assignedToId], references: [id])
+  notes        String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  logs         ComplaintLog[]
+
+  @@map("complaints")
+}
+
+model ComplaintLog {
+  id           String   @id @default(uuid())
+  complaintId  String
+  complaint    Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  action       String
+  performedById String?
+  performedBy  User?    @relation(fields: [performedById], references: [id])
+  timestamp    DateTime @default(now())
+
+  @@map("complaint_logs")
+}

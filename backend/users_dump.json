@@ -1,0 +1,62 @@
+[
+  {
+    "id": "b17a37c0-47db-4c45-91f8-adadf10d79c1",
+    "name": "Super Admin",
+    "email": "admin@codered.com",
+    "password": "$2b$12$/n8spSoruTg8ZxYgDs4rIOy6gvdCmn.nxoAx1XXL3aj7x7bm0AxvG",
+    "role": "SUPER_ADMIN",
+    "state": null,
+    "createdAt": "2026-02-28T19:56:02.830Z",
+    "updatedAt": "2026-02-28T19:56:02.830Z"
+  },
+  {
+    "id": "3269afee-0801-4492-81e7-6fdcf6a396cf",
+    "name": "State Admin",
+    "email": "stateadmin@codered.com",
+    "password": "$2b$12$/n8spSoruTg8ZxYgDs4rIOy6gvdCmn.nxoAx1XXL3aj7x7bm0AxvG",
+    "role": "STATE_ADMIN",
+    "state": "Maharashtra",
+    "createdAt": "2026-02-28T19:56:02.835Z",
+    "updatedAt": "2026-02-28T19:56:02.835Z"
+  },
+  {
+    "id": "14448541-3de2-46a6-8312-b3a75a539bd2",
+    "name": "Officer One",
+    "email": "officer@codered.com",
+    "password": "$2b$12$/n8spSoruTg8ZxYgDs4rIOy6gvdCmn.nxoAx1XXL3aj7x7bm0AxvG",
+    "role": "OFFICER",
+    "state": "Maharashtra",
+    "createdAt": "2026-02-28T19:56:02.836Z",
+    "updatedAt": "2026-02-28T19:56:02.836Z"
+  },
+  {
+    "id": "bf552163-1d9d-4acf-a3a4-467eef8eefd8",
+    "name": "State Admin",
+    "email": "stateadmin@gmail.com",
+    "password": "$2b$12$EOdUQqbN0u0Qx71EE3LBZ.MpkFl2Atqtt8I4m/hVSYElZWASQdJC6",
+    "role": "STATE_ADMIN",
+    "state": "Maharashtra",
+    "createdAt": "2026-02-28T20:07:23.353Z",
+    "updatedAt": "2026-02-28T20:07:23.353Z"
+  },
+  {
+    "id": "299cdce3-cd4a-4d9d-a90c-e5073fbcbb9f",
+    "name": "Officer One",
+    "email": "officer@gmail.com",
+    "password": "$2b$12$EOdUQqbN0u0Qx71EE3LBZ.MpkFl2Atqtt8I4m/hVSYElZWASQdJC6",
+    "role": "OFFICER",
+    "state": "Maharashtra",
+    "createdAt": "2026-02-28T20:07:23.355Z",
+    "updatedAt": "2026-02-28T20:07:23.355Z"
+  },
+  {
+    "id": "af8fe11c-9cb0-4b47-bc79-7efbf3f1d6dd",
+    "name": "Super Admin",
+    "email": "admin@gmail.com",
+    "password": "$2b$12$gtXAKUx/9TVax8LUFLNjX.dltZSjgJyu4Edt2AdkZNpwejZd9iNcm",
+    "role": "SUPER_ADMIN",
+    "state": null,
+    "createdAt": "2026-02-28T20:05:34.039Z",
+    "updatedAt": "2026-02-28T20:07:40.582Z"
+  }
+]

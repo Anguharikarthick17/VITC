@@ -1,0 +1,506 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    background-color: #05050A;
+    /* Extremely dark for video contrast */
+    color: white;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+.glow-panel {
+  background: rgba(10, 10, 18, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(6, 182, 212, 0.4);
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
+  border-radius: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.glow-panel:hover {
+  border-color: rgba(6, 182, 212, 0.8);
+  box-shadow: 0 0 25px rgba(6, 182, 212, 0.4), inset 0 0 10px rgba(6, 182, 212, 0.1);
+}
+
+.glow-panel-critical {
+  background: rgba(225, 29, 72, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(225, 29, 72, 0.6);
+  box-shadow: 0 0 20px rgba(225, 29, 72, 0.3);
+  border-radius: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.glow-panel-critical:hover {
+  border-color: rgba(225, 29, 72, 0.9);
+  box-shadow: 0 0 30px rgba(225, 29, 72, 0.5), inset 0 0 15px rgba(225, 29, 72, 0.2);
+}
+
+.glow-text {
+  text-shadow: 0 0 10px rgba(6, 182, 212, 0.8), 0 0 20px rgba(6, 182, 212, 0.4);
+  color: #fff;
+}
+
+.glow-text-critical {
+  text-shadow: 0 0 10px rgba(225, 29, 72, 0.9), 0 0 20px rgba(225, 29, 72, 0.5);
+  color: #fff;
+}
+
+/* Base button */
+.btn-neon {
+  background: rgba(6, 182, 212, 0.1);
+  border: 1px solid rgba(6, 182, 212, 0.8);
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.4), inset 0 0 10px rgba(6, 182, 212, 0.2);
+  color: white;
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+  padding: 0.625rem 1.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.btn-neon:hover {
+  background: rgba(6, 182, 212, 0.3);
+  box-shadow: 0 0 25px rgba(6, 182, 212, 0.8), inset 0 0 20px rgba(6, 182, 212, 0.4);
+  transform: scale(1.02);
+}
+
+.btn-neon-secondary {
+  background: rgba(168, 85, 247, 0.1);
+  border: 1px solid rgba(168, 85, 247, 0.8);
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.4), inset 0 0 10px rgba(168, 85, 247, 0.2);
+  color: white;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.btn-neon-secondary:hover:not(:disabled) {
+  background: rgba(168, 85, 247, 0.3);
+  box-shadow: 0 0 25px rgba(168, 85, 247, 0.8), inset 0 0 20px rgba(168, 85, 247, 0.4);
+}
+
+.btn-neon-secondary[disabled] {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.input-neon {
+  background: rgba(10, 10, 18, 0.8);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  box-shadow: inset 0 0 10px rgba(6, 182, 212, 0.1);
+  color: white;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+/* Use this when there is a leading icon inside the input wrapper */
+.input-neon-with-icon {
+  padding-left: 2.75rem;
+}
+
+.input-neon:focus {
+  outline: none;
+  border-color: rgba(6, 182, 212, 1);
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.5), inset 0 0 10px rgba(6, 182, 212, 0.3);
+}
+
+
+.video-bg-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.video-bg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  min-width: 100%;
+  min-height: 100%;
+  width: auto;
+  height: auto;
+  transform: translateX(-50%) translateY(-50%);
+  object-fit: cover;
+  opacity: 0.4;
+  mix-blend-mode: screen;
+}
+
+.badge-neon {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: inline-block;
+}
+
+.badge-neon-blue {
+  background: rgba(59, 130, 246, 0.1);
+  color: rgb(147, 197, 253);
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+  text-shadow: 0 0 5px rgba(59, 130, 246, 0.8);
+}
+
+.badge-neon-green {
+  background: rgba(16, 185, 129, 0.1);
+  color: rgb(110, 231, 183);
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+  text-shadow: 0 0 5px rgba(16, 185, 129, 0.8);
+}
+
+.badge-neon-yellow {
+  background: rgba(234, 179, 8, 0.1);
+  color: rgb(253, 224, 71);
+  border: 1px solid rgba(234, 179, 8, 0.5);
+  box-shadow: 0 0 10px rgba(234, 179, 8, 0.4);
+  text-shadow: 0 0 5px rgba(234, 179, 8, 0.8);
+}
+
+.badge-neon-orange {
+  background: rgba(249, 115, 22, 0.1);
+  color: rgb(253, 186, 116);
+  border: 1px solid rgba(249, 115, 22, 0.5);
+  box-shadow: 0 0 10px rgba(249, 115, 22, 0.4);
+  text-shadow: 0 0 5px rgba(249, 115, 22, 0.8);
+}
+
+.badge-neon-red {
+  background: rgba(239, 68, 68, 0.1);
+  color: rgb(252, 165, 165);
+  border: 1px solid rgba(239, 68, 68, 0.8);
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
+  text-shadow: 0 0 8px rgba(239, 68, 68, 0.9);
+  animation: pulse-border 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-border {
+
+  0%,
+  100% {
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
+  }
+
+  50% {
+    box-shadow: 0 0 30px rgba(239, 68, 68, 0.9);
+  }
+}
+
+.sidebar-link-neon {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  color: rgb(156, 163, 175);
+  transition: all 0.3s;
+}
+
+.sidebar-link-neon-active {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  color: rgb(34, 211, 238);
+  background: rgba(6, 182, 212, 0.1);
+  border-left: 2px solid rgb(34, 211, 238);
+  box-shadow: inset 10px 0 20px -10px rgba(6, 182, 212, 0.4);
+  text-shadow: 0 0 8px rgba(6, 182, 212, 0.8);
+}
+
+.sidebar-link-neon:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 2px 0 0 rgba(255, 255, 255, 0.3);
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+}
+
+.table-row-neon {
+  border-bottom: 1px solid rgba(6, 182, 212, 0.2);
+  transition: all 0.3s;
+}
+
+.table-row-neon:hover {
+  background: rgba(6, 182, 212, 0.05);
+  box-shadow: inset 0 0 15px rgba(6, 182, 212, 0.1);
+}
+
+@keyframes radar-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.radar-sweep {
+  animation: radar-spin 4s linear infinite;
+  background: conic-gradient(from 0deg, transparent 70%, rgba(34, 211, 238, 0.1) 98%, rgba(34, 211, 238, 0.8) 100%);
+  border-radius: 50%;
+  box-shadow: inset 0 0 20px rgba(34, 211, 238, 0.2);
+}
+
+/* 
+=====================================================
+LIGHT MODE OVERRIDES
+(Activated via document.body.classList.toggle('light-mode'))
+===================================================== 
+*/
+
+body.light-mode {
+  background-color: #E8D8C3 !important;
+  color: #5C5145 !important;
+}
+
+/* Base Headings & Text */
+body.light-mode h1,
+body.light-mode h2,
+body.light-mode h3,
+body.light-mode h4,
+body.light-mode h5,
+body.light-mode h6,
+body.light-mode .glow-text,
+body.light-mode .text-white,
+body.light-mode [class*="text-cyan-"],
+body.light-mode [class*="text-purple-"],
+body.light-mode [class*="text-fuchsia-"],
+body.light-mode [class*="text-yellow-"],
+body.light-mode [class*="text-blue-"],
+body.light-mode [class*="text-green-"],
+body.light-mode [class*="text-orange-"] {
+  color: #4A3F35 !important;
+  text-shadow: none !important;
+  drop-shadow: none !important;
+  filter: none !important;
+}
+
+body.light-mode .text-transparent {
+  color: #4A3F35 !important;
+  background: none !important;
+  -webkit-text-fill-color: #4A3F35 !important;
+}
+
+body.light-mode p,
+body.light-mode span,
+body.light-mode div,
+body.light-mode label {
+  text-shadow: none !important;
+}
+
+body.light-mode [class*="text-gray-"] {
+  color: #6E6257 !important;
+}
+
+/* Panels & Cards */
+body.light-mode .glow-panel,
+body.light-mode [class*="bg-[#1A1A2E]"],
+body.light-mode [class*="bg-black/"],
+body.light-mode [class*="bg-[#0F0F1A]/"],
+body.light-mode [class*="bg-cyan-500/"] {
+  background-color: #FFFFFF !important;
+  border-color: #D6C5B4 !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+body.light-mode .glow-panel-critical {
+  background-color: #FFF5F5 !important;
+  border-color: rgba(139, 0, 0, 0.2) !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+body.light-mode .glow-text-critical {
+  color: #8B0000 !important;
+  text-shadow: none !important;
+}
+
+/* Background Layers */
+body.light-mode [class*="bg-[#0F0F1A]"] {
+  background-color: #E8D8C3 !important;
+}
+
+body.light-mode [class*="bg-[#2A2A4A]"] {
+  background-color: #D6C5B4 !important;
+}
+
+/* Fix gradients and blurring */
+body.light-mode [class*="from-[#0F0F1A]"],
+body.light-mode [class*="to-[#0F0F1A]"] {
+  background: transparent !important;
+}
+
+body.light-mode .bg-gradient-to-br[class*="from-cyan-"] {
+  background: #8B0000 !important;
+  box-shadow: 0 2px 4px rgba(139, 0, 0, 0.2) !important;
+}
+
+body.light-mode [class*="mix-blend-screen"] {
+  display: none !important;
+}
+
+body.light-mode [class*="mix-blend-multiply"] {
+  opacity: 0.1 !important;
+}
+
+/* Inputs */
+body.light-mode .input-neon,
+body.light-mode input,
+body.light-mode select,
+body.light-mode textarea {
+  background-color: #FFFFFF !important;
+  border: 1px solid #D6C5B4 !important;
+  color: #5C5145 !important;
+  box-shadow: none !important;
+}
+
+body.light-mode .input-neon:focus,
+body.light-mode input:focus,
+body.light-mode select:focus,
+body.light-mode textarea:focus {
+  border-color: #8B0000 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Primary Buttons */
+body.light-mode .btn-neon,
+body.light-mode button[class*="bg-gradient-to-r"],
+body.light-mode .btn-primary {
+  background: #8B0000 !important;
+  border: none !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 2px 4px rgba(139, 0, 0, 0.2) !important;
+  text-shadow: none !important;
+  transition: all 0.2s ease !important;
+}
+
+body.light-mode .btn-neon:hover,
+body.light-mode button[class*="bg-gradient-to-r"]:hover,
+body.light-mode .btn-primary:hover {
+  background: #A40000 !important;
+  box-shadow: 0 4px 8px rgba(139, 0, 0, 0.3) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Recharts Overrides */
+body.light-mode .recharts-text {
+  fill: #5C5145 !important;
+}
+
+body.light-mode .recharts-cartesian-axis-line,
+body.light-mode .recharts-cartesian-axis-tick-line {
+  stroke: #D6C5B4 !important;
+}
+
+body.light-mode .recharts-tooltip-wrapper .recharts-default-tooltip {
+  background-color: #FFFFFF !important;
+  border-color: #D6C5B4 !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05) !important;
+}
+
+body.light-mode .recharts-tooltip-item {
+  color: #5C5145 !important;
+}
+
+/* Secondary Buttons */
+body.light-mode .btn-neon-secondary {
+  background: transparent !important;
+  border: 1px solid #8B0000 !important;
+  color: #8B0000 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+body.light-mode .btn-neon-secondary:hover {
+  background: rgba(139, 0, 0, 0.05) !important;
+  box-shadow: none !important;
+}
+
+/* Borders mapping */
+body.light-mode [class*="border-cyan-"],
+body.light-mode [class*="border-[#2A2A4A]"],
+body.light-mode [class*="border-[rgba(6,182,212"] {
+  border-color: #D6C5B4 !important;
+}
+
+/* Table overrides */
+body.light-mode .table-row-neon {
+  border-bottom-color: #D6C5B4 !important;
+}
+
+body.light-mode .table-row-neon:hover {
+  background-color: #F3E8DA !important;
+  box-shadow: none !important;
+}
+
+/* Sidebar Links */
+body.light-mode .sidebar-link-neon {
+  color: #6E6257 !important;
+}
+
+body.light-mode .sidebar-link-neon:hover {
+  background-color: #F3E8DA !important;
+  color: #4A3F35 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+body.light-mode .sidebar-link-neon-active {
+  background-color: rgba(139, 0, 0, 0.05) !important;
+  color: #8B0000 !important;
+  border-left-color: #8B0000 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+/* Utility to ensure text shadows are killed on all hover states */
+body.light-mode *:hover {
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+
+/* Exception to the hover box-shadow clear for our custom premium buttons */
+body.light-mode .btn-neon:hover,
+body.light-mode button[class*="bg-gradient-to-r"]:hover {
+  box-shadow: 0 4px 8px rgba(139, 0, 0, 0.3) !important;
+}
+
+body.light-mode .glow-panel:hover {
+  border-color: #D6C5B4 !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Kill specific SVGs dropshadows and SVGs glows */
+body.light-mode svg {
+  filter: none !important;
+  drop-shadow: none !important;
+}
+
+/* Kill inline drop-shadows injected by Tailwind */
+body.light-mode [class*="drop-shadow"] {
+  --tw-drop-shadow: drop-shadow(0 0 #0000) !important;
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow) !important;
+}
