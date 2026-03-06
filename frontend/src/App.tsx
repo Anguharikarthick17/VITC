@@ -5,7 +5,7 @@ import AnimatedRoutes from './components/AnimatedRoutes';
 
 function App() {
   return (
-    <ThemeProvider>
+    < ThemeProvider >
       <AuthProvider>
         <BrowserRouter>
           <AnimatedRoutes />
@@ -22,7 +22,7 @@ function App() {
 
         </BrowserRouter>
       </AuthProvider>
-    </ThemeProvider>
+    </ThemeProvider >
   );
 }
 

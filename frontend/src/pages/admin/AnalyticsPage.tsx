@@ -5,7 +5,7 @@ import {
     PieChart, Pie, Cell,
     LineChart, Line, CartesianGrid,
 } from 'recharts';
-import api from '../../services/api';
+import { analyticsService } from '../../services/supabaseService';
 
 const COLORS = ['#EF4444', '#F59E0B', '#3B82F6', '#22C55E', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316', '#6366F1', '#06B6D4'];
 
@@ -20,18 +20,18 @@ const AnalyticsPage: React.FC = () => {
     useEffect(() => {
         const fetchAll = async () => {
             try {
-                const [stateRes, catRes, sevRes, dailyRes, resRes] = await Promise.all([
-                    api.get('/analytics/by-state'),
-                    api.get('/analytics/by-category'),
-                    api.get('/analytics/by-severity'),
-                    api.get('/analytics/daily'),
-                    api.get('/analytics/resolution-time'),
+                const [stateData, catData, sevData, dailyData, resData] = await Promise.all([
+                    analyticsService.getByState(),
+                    analyticsService.getByCategory(),
+                    analyticsService.getBySeverity(),
+                    analyticsService.getDaily(),
+                    analyticsService.getResolutionTime(),
                 ]);
-                setByState(stateRes.data);
-                setByCategory(catRes.data);
-                setBySeverity(sevRes.data);
-                setDaily(dailyRes.data);
-                setResolution(resRes.data);
+                setByState(stateData as { state: string; count: number }[]);
+                setByCategory(catData as { category: string; count: number }[]);
+                setBySeverity(sevData as { severity: string; count: number }[]);
+                setDaily(dailyData);
+                setResolution(resData);
             } catch (err) {
                 console.error(err);
             } finally {
@@ -53,7 +53,6 @@ const AnalyticsPage: React.FC = () => {
         <div className="space-y-6">
             <h1 className="text-2xl font-bold text-white">Analytics</h1>
 
-            {/* Resolution Time Card */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="stat-card">
                     <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
@@ -71,7 +70,6 @@ const AnalyticsPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Daily Line Chart */}
             <div className="card p-6">
                 <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                     <TrendingUp className="w-5 h-5 text-cyan-400" /> Complaints Per Day (Last 30 Days)
@@ -92,7 +90,6 @@ const AnalyticsPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* By State Bar Chart */}
                 <div className="card p-6">
                     <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                         <BarChart3 className="w-5 h-5 text-cyan-400" /> Complaints by State
@@ -111,7 +108,6 @@ const AnalyticsPage: React.FC = () => {
                     )}
                 </div>
 
-                {/* By Category Pie Chart */}
                 <div className="card p-6">
                     <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                         <PieChartIcon className="w-5 h-5 text-cyan-400" /> Complaints by Category
@@ -132,7 +128,6 @@ const AnalyticsPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Severity Distribution */}
             <div className="card p-6">
                 <h3 className="text-lg font-semibold text-white mb-4">Severity Distribution</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

@@ -17,7 +17,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
 
     useEffect(() => {
-        // Toggle the specific light-mode class on the body element
         if (theme === 'light') {
             document.body.classList.add('light-mode');
         } else {

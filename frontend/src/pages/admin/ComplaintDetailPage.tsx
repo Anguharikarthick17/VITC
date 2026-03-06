@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Trash2, Clock, AlertTriangle, Image as ImageIcon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import api from '../../services/api';
+import { complaintService, userService } from '../../services/supabaseService';
 
 interface Officer {
     id: string;
@@ -14,7 +14,7 @@ interface Officer {
 interface LogEntry {
     id: string;
     action: string;
-    performedBy: { name: string; role: string } | null;
+    performed_by: { name: string; role: string } | null;
     timestamp: string;
 }
 
@@ -30,12 +30,12 @@ interface ComplaintData {
     address: string;
     contact: string;
     email: string;
-    image: string | null;
+    image_url: string | null;
     notes: string | null;
-    assignedTo: { id: string; name: string; role: string; email: string } | null;
-    assignedToId: string | null;
-    createdAt: string;
-    updatedAt: string;
+    assigned_to: { id: string; name: string; role: string; email: string } | null;
+    assigned_to_id: string | null;
+    created_at: string;
+    updated_at: string;
     logs: LogEntry[];
 }
 
@@ -70,55 +70,64 @@ const ComplaintDetailPage: React.FC = () => {
 
     useEffect(() => {
         const fetchData = async () => {
+            if (!id) return;
             try {
                 const [compRes, offRes] = await Promise.all([
-                    api.get(`/complaints/${id}`),
-                    api.get('/users/officers'),
+                    complaintService.getComplaintById(id),
+                    userService.getOfficers(),
                 ]);
-                setComplaint(compRes.data);
-                setOfficers(offRes.data);
-                setStatus(compRes.data.status);
-                setAssignedToId(compRes.data.assignedToId || '');
-                setNotes(compRes.data.notes || '');
-            } catch {
+                setComplaint(compRes);
+                setOfficers(offRes);
+                setStatus(compRes.status);
+                setAssignedToId(compRes.assigned_to_id || '');
+                setNotes(compRes.notes || '');
+            } catch (err) {
+                console.error('Error fetching details:', err);
                 navigate('/admin/complaints');
             } finally {
                 setLoading(false);
             }
         };
         fetchData();
-    }, [id]);
+    }, [id, navigate]);
 
     const handleUpdate = async () => {
+        if (!id) return;
         setSaving(true);
         setMessage('');
         try {
             const payload: any = {};
             if (status !== complaint?.status) payload.status = status;
-            if (assignedToId !== (complaint?.assignedToId || '')) payload.assignedToId = assignedToId || null;
+            if (assignedToId !== (complaint?.assigned_to_id || '')) payload.assignedToId = assignedToId || null;
             if (notes !== (complaint?.notes || '')) payload.notes = notes;
 
-            const { data } = await api.patch(`/complaints/${id}`, payload);
-            setComplaint({ ...complaint!, ...data, logs: complaint!.logs });
+            if (Object.keys(payload).length === 0) {
+                setMessage('No changes to save');
+                setSaving(false);
+                return;
+            }
+
+            await complaintService.updateComplaint(id, payload);
             setMessage('Updated successfully');
 
-            // Refresh logs
-            const refreshed = await api.get(`/complaints/${id}`);
-            setComplaint(refreshed.data);
+            // Refresh data
+            const refreshed = await complaintService.getComplaintById(id);
+            setComplaint(refreshed);
         } catch (err: any) {
-            setMessage(err.response?.data?.error || 'Update failed');
+            setMessage(err.message || 'Update failed');
         } finally {
             setSaving(false);
         }
     };
 
     const handleDelete = async () => {
+        if (!id) return;
         if (!confirm('Are you sure you want to delete this complaint?')) return;
         try {
-            await api.delete(`/complaints/${id}`);
+            await complaintService.deleteComplaint(id);
             navigate('/admin/complaints');
         } catch (err: any) {
-            setMessage(err.response?.data?.error || 'Delete failed');
+            setMessage(err.message || 'Delete failed');
         }
     };
 
@@ -139,7 +148,7 @@ const ComplaintDetailPage: React.FC = () => {
                     <ArrowLeft className="w-5 h-5" />
                 </button>
                 <div className="flex-1">
-                    <h1 className="text-2xl font-bold glow-text drop-shadow-[0_0_8px_rgba(34, 211, 238,0.8)]">{complaint.title}</h1>
+                    <h1 className="text-2xl font-bold glow-text drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]">{complaint.title}</h1>
                     <p className="text-xs text-gray-500 font-mono mt-1">ID: {complaint.id}</p>
                 </div>
                 <span className={severityBadge(complaint.severity)}>{complaint.severity}</span>
@@ -160,7 +169,6 @@ const ComplaintDetailPage: React.FC = () => {
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Main Info */}
                 <div className="lg:col-span-2 space-y-6">
                     <div className="glow-panel p-6">
                         <h3 className="text-lg font-semibold glow-text mb-4">Complaint Details</h3>
@@ -180,17 +188,15 @@ const ComplaintDetailPage: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Image */}
-                    {complaint.image && (
+                    {complaint.image_url && (
                         <div className="glow-panel p-6">
                             <h3 className="text-lg font-semibold glow-text mb-4 flex items-center gap-2">
                                 <ImageIcon className="w-5 h-5 text-cyan-400" /> Uploaded Image
                             </h3>
-                            <img src={`/uploads/${complaint.image}`} alt="Complaint" className="rounded-lg max-h-96 w-full object-contain bg-black/20" />
+                            <img src={complaint.image_url} alt="Complaint" className="rounded-lg max-h-96 w-full object-contain bg-black/20" />
                         </div>
                     )}
 
-                    {/* Timeline */}
                     <div className="glow-panel p-6">
                         <h3 className="text-lg font-semibold glow-text mb-4 flex items-center gap-2">
                             <Clock className="w-5 h-5 text-cyan-400" /> Activity Log
@@ -205,16 +211,18 @@ const ComplaintDetailPage: React.FC = () => {
                                     <div className="pb-5">
                                         <p className="text-white text-sm">{log.action}</p>
                                         <p className="text-xs text-gray-500 mt-1">
-                                            {log.performedBy?.name || 'System'} · {new Date(log.timestamp).toLocaleString()}
+                                            {log.performed_by?.name || 'System'} · {new Date(log.timestamp).toLocaleString()}
                                         </p>
                                     </div>
                                 </div>
                             ))}
+                            {complaint.logs.length === 0 && (
+                                <p className="text-sm text-gray-500 italic">No activity logs found.</p>
+                            )}
                         </div>
                     </div>
                 </div>
 
-                {/* Side Panel - Actions */}
                 <div className="space-y-6">
                     <div className="glow-panel p-6 space-y-4">
                         <h3 className="text-lg font-semibold glow-text">Actions</h3>
@@ -257,12 +265,11 @@ const ComplaintDetailPage: React.FC = () => {
                         )}
                     </div>
 
-                    {/* Info Card */}
                     <div className="glow-panel p-6 space-y-3">
                         <h4 className="text-sm font-semibold text-cyan-400/80 uppercase tracking-widest">Metadata</h4>
                         <div className="space-y-2 text-sm">
-                            <div className="flex justify-between"><span className="text-gray-500">Created</span><span className="text-white">{new Date(complaint.createdAt).toLocaleString()}</span></div>
-                            <div className="flex justify-between"><span className="text-gray-500">Updated</span><span className="text-white">{new Date(complaint.updatedAt).toLocaleString()}</span></div>
+                            <div className="flex justify-between"><span className="text-gray-500">Created</span><span className="text-white">{new Date(complaint.created_at).toLocaleString()}</span></div>
+                            <div className="flex justify-between"><span className="text-gray-500">Updated</span><span className="text-white">{new Date(complaint.updated_at).toLocaleString()}</span></div>
                             <div className="flex justify-between"><span className="text-gray-500">Currently</span><span className={statusBadge(complaint.status)}>{complaint.status.replace('_', ' ')}</span></div>
                         </div>
                     </div>
