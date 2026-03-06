@@ -7,6 +7,7 @@ interface AuthContextType {
     user: User | null;
     session: any | null;
     login: (email: string, password: string) => Promise<void>;
+    loginWithToken: (token: string) => Promise<void>;
     logout: () => Promise<void>;
     isLoading: boolean;
 }
@@ -72,6 +73,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (error) throw error;
     };
 
+    const loginWithToken = async (token: string) => {
+        const { error } = await supabase.auth.setSession({
+            access_token: token,
+            refresh_token: '', // Refresh token might not be available
+        });
+        if (error) throw error;
+    };
+
     const logout = async () => {
         await supabase.auth.signOut();
         setUser(null);
@@ -79,7 +88,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     return (
-        <AuthContext.Provider value={{ user, session, login, logout, isLoading }}>
+        <AuthContext.Provider value={{ user, session, login, loginWithToken, logout, isLoading }}>
             {children}
         </AuthContext.Provider>
     );
