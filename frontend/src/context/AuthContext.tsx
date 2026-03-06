@@ -1,21 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import api from '../services/api';
-
-interface User {
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-    state: string | null;
-}
+import { supabase } from '../lib/supabase';
+import type { User } from '../types/auth';
 
 interface AuthContextType {
     user: User | null;
-    token: string | null;
+    session: any | null;
     login: (email: string, password: string) => Promise<void>;
-    loginWithToken: (token: string) => Promise<void>;
-    logout: () => void;
+    logout: () => Promise<void>;
     isLoading: boolean;
 }
 
@@ -29,55 +21,65 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
-    const [token, setToken] = useState<string | null>(localStorage.getItem('codered_token'));
+    const [session, setSession] = useState<any | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const loadUser = async () => {
-            if (token) {
-                try {
-                    const { data } = await api.get('/auth/me');
-                    setUser(data);
-                } catch {
-                    localStorage.removeItem('codered_token');
-                    localStorage.removeItem('codered_user');
-                    setToken(null);
-                }
+        // Initial check for session
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setSession(session);
+            if (session?.user) {
+                fetchUserProfile(session.user.id);
+            } else {
+                setIsLoading(false);
             }
+        });
+
+        // Listen for auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setSession(session);
+            if (session?.user) {
+                fetchUserProfile(session.user.id);
+            } else {
+                setUser(null);
+                setIsLoading(false);
+            }
+        });
+
+        return () => subscription.unsubscribe();
+    }, []);
+
+    const fetchUserProfile = async (userId: string) => {
+        try {
+            const { data, error } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', userId)
+                .single();
+
+            if (error) throw error;
+            setUser(data);
+        } catch (err) {
+            console.error('Error fetching user profile:', err);
+            setUser(null);
+        } finally {
             setIsLoading(false);
-        };
-        loadUser();
-    }, [token]);
+        }
+    };
 
     const login = async (email: string, password: string) => {
-        const { data } = await api.post('/auth/login', { email, password });
-        localStorage.setItem('codered_token', data.token);
-        localStorage.setItem('codered_user', JSON.stringify(data.user));
-        setToken(data.token);
-        setUser(data.user);
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
     };
 
-    /** Used after Google OAuth redirect – we already have the token */
-    const loginWithToken = async (newToken: string) => {
-        localStorage.setItem('codered_token', newToken);
-        setToken(newToken);
-        // Fetch the user profile using the new token
-        const { data } = await api.get('/auth/me', {
-            headers: { Authorization: `Bearer ${newToken}` },
-        });
-        localStorage.setItem('codered_user', JSON.stringify(data));
-        setUser(data);
-    };
-
-    const logout = () => {
-        localStorage.removeItem('codered_token');
-        localStorage.removeItem('codered_user');
-        setToken(null);
+    const logout = async () => {
+        await supabase.auth.signOut();
         setUser(null);
+        setSession(null);
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, login, loginWithToken, logout, isLoading }}>
+        <AuthContext.Provider value={{ user, session, login, logout, isLoading }}>
             {children}
         </AuthContext.Provider>
     );

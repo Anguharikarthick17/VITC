@@ -8,7 +8,7 @@ import {
     BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell,
 } from 'recharts';
-import api from '../../services/api';
+import { analyticsService, complaintService } from '../../services/supabaseService';
 
 interface Summary {
     total: number;
@@ -25,7 +25,7 @@ interface Complaint {
     severity: string;
     status: string;
     state: string;
-    createdAt: string;
+    created_at: string;
 }
 
 const COLORS = ['#EAB308', '#3B82F6', '#22C55E', '#EF4444'];
@@ -36,18 +36,19 @@ const DashboardPage: React.FC = () => {
     const [byCategory, setByCategory] = useState<{ category: string; count: number }[]>([]);
     const [bySeverity, setBySeverity] = useState<{ severity: string; count: number }[]>([]);
     const [loading, setLoading] = useState(true);
+
     const fetchData = async () => {
         try {
-            const [sumRes, compRes, catRes, sevRes] = await Promise.all([
-                api.get('/analytics/summary'),
-                api.get('/complaints?limit=5'),
-                api.get('/analytics/by-category'),
-                api.get('/analytics/by-severity'),
+            const [sumData, compData, catData, sevData] = await Promise.all([
+                analyticsService.getSummary(),
+                complaintService.getComplaints({}, 1, 5),
+                analyticsService.getByCategory(),
+                analyticsService.getBySeverity(),
             ]);
-            setSummary(sumRes.data);
-            setRecentComplaints(compRes.data.complaints || []);
-            setByCategory(catRes.data);
-            setBySeverity(sevRes.data);
+            setSummary(sumData);
+            setRecentComplaints(compData.complaints || []);
+            setByCategory(catData as { category: string; count: number }[]);
+            setBySeverity(sevData as { severity: string; count: number }[]);
         } catch (err) {
             console.error('Dashboard error:', err);
         } finally {
@@ -58,8 +59,8 @@ const DashboardPage: React.FC = () => {
     useEffect(() => {
         fetchData();
 
-        // Auto-refresh every 5 seconds for near real-time updates
-        const interval = setInterval(fetchData, 5000);
+        // Auto-refresh every 10 seconds for near real-time updates
+        const interval = setInterval(fetchData, 10000);
 
         // Auto-refresh when user switches back to this tab
         const onFocus = () => fetchData();
@@ -80,11 +81,11 @@ const DashboardPage: React.FC = () => {
     }
 
     const statCards = [
-        { label: 'Total', value: Math.max(summary?.total || 0, 145), icon: FileText, color: 'text-white' },
-        { label: 'Pending', value: Math.max(summary?.pending || 0, 23), icon: Clock, color: 'text-yellow-400' },
-        { label: 'In Progress', value: Math.max(summary?.inProgress || 0, 27), icon: Loader, color: 'text-blue-400' },
-        { label: 'Resolved', value: Math.max(summary?.resolved || 0, 118), icon: CheckCircle, color: 'text-green-400' },
-        { label: 'Escalated', value: Math.max(summary?.escalated || 0, 21), icon: TrendingUp, color: 'text-orange-400' },
+        { label: 'Total', value: summary?.total || 0, icon: FileText, color: 'text-white' },
+        { label: 'Pending', value: summary?.pending || 0, icon: Clock, color: 'text-yellow-400' },
+        { label: 'In Progress', value: summary?.inProgress || 0, icon: Loader, color: 'text-blue-400' },
+        { label: 'Resolved', value: summary?.resolved || 0, icon: CheckCircle, color: 'text-green-400' },
+        { label: 'Escalated', value: summary?.escalated || 0, icon: TrendingUp, color: 'text-orange-400' },
     ];
 
     const statusBadge = (status: string) => {
@@ -104,10 +105,7 @@ const DashboardPage: React.FC = () => {
     };
 
     return (
-        /* Full-height flex column — fills the scrollable main area */
         <div className="flex flex-col gap-3 h-full min-h-0">
-
-            {/* ── Top row: title + date ── */}
             <div className="flex items-center justify-between shrink-0">
                 <h1 className="text-xl font-bold glow-text">Dashboard</h1>
                 <span className="text-xs text-gray-500">
@@ -115,7 +113,6 @@ const DashboardPage: React.FC = () => {
                 </span>
             </div>
 
-            {/* ── Critical Alert ── */}
             {(summary?.critical || 0) > 0 && (
                 <div className="glow-panel-critical p-3 flex items-center gap-3 animate-pulse shrink-0">
                     <div className="w-9 h-9 rounded-full bg-red-500/20 flex items-center justify-center border border-red-500/50 shadow-[0_0_12px_rgba(239,68,68,0.5)] shrink-0">
@@ -132,11 +129,10 @@ const DashboardPage: React.FC = () => {
                 </div>
             )}
 
-            {/* ── Stat Cards ── */}
             <div className="grid grid-cols-5 gap-3 shrink-0">
                 {statCards.map(({ label, value, icon: Icon, color }) => (
                     <div key={label} className="glow-panel p-4 flex flex-col gap-1.5 relative overflow-hidden group">
-                        <div className="w-9 h-9 rounded-xl bg-black/40 border border-cyan-500/30 flex items-center justify-center shadow-[0_0_8px_rgba(6, 182, 212,0.2)] group-hover:shadow-[0_0_15px_rgba(6, 182, 212,0.5)] transition-all">
+                        <div className="w-9 h-9 rounded-xl bg-black/40 border border-cyan-500/30 flex items-center justify-center shadow-[0_0_8px_rgba(6,181,211,0.2)] group-hover:shadow-[0_0_15px_rgba(6,181,211,0.5)] transition-all">
                             <Icon className={`w-5 h-5 ${color}`} />
                         </div>
                         <p className="text-2xl font-bold glow-text">{value}</p>
@@ -145,10 +141,7 @@ const DashboardPage: React.FC = () => {
                 ))}
             </div>
 
-            {/* ── Charts + Table row — fills remaining height ── */}
             <div className="flex-1 min-h-0 grid grid-cols-3 gap-3">
-
-                {/* Bar chart */}
                 <div className="glow-panel p-4 flex flex-col min-h-0">
                     <h3 className="text-sm font-semibold glow-text mb-2 shrink-0">Complaints by Category</h3>
                     <div className="flex-1 min-h-0">
@@ -157,7 +150,7 @@ const DashboardPage: React.FC = () => {
                                 <BarChart data={byCategory}>
                                     <XAxis dataKey="category" tick={{ fill: '#22D3EE', fontSize: 10 }} angle={-30} textAnchor="end" height={55} />
                                     <YAxis tick={{ fill: '#22D3EE', fontSize: 11 }} />
-                                    <Tooltip cursor={{ fill: 'rgba(6, 182, 212,0.1)' }} contentStyle={{ backgroundColor: 'rgba(10,10,18,0.9)', border: '1px solid rgba(6, 182, 212,0.5)', borderRadius: 8, color: '#22D3EE' }} />
+                                    <Tooltip cursor={{ fill: 'rgba(6,181,211,0.1)' }} contentStyle={{ backgroundColor: 'rgba(10,10,18,0.9)', border: '1px solid rgba(6,181,211,0.5)', borderRadius: 8, color: '#22D3EE' }} />
                                     <Bar dataKey="count" fill="#A855F7" radius={[4, 4, 0, 0]} />
                                 </BarChart>
                             </ResponsiveContainer>
@@ -167,7 +160,6 @@ const DashboardPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Pie chart */}
                 <div className="glow-panel p-4 flex flex-col min-h-0">
                     <h3 className="text-sm font-semibold glow-text mb-2 shrink-0">Severity Distribution</h3>
                     <div className="flex-1 min-h-0">
@@ -185,7 +177,7 @@ const DashboardPage: React.FC = () => {
                                     >
                                         {bySeverity.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} stroke="rgba(10,10,18,0.8)" strokeWidth={2} />)}
                                     </Pie>
-                                    <Tooltip contentStyle={{ backgroundColor: 'rgba(10,10,18,0.9)', border: '1px solid rgba(6, 182, 212,0.5)', borderRadius: 8, color: '#fff' }} itemStyle={{ color: '#fff' }} />
+                                    <Tooltip contentStyle={{ backgroundColor: 'rgba(10,10,18,0.9)', border: '1px solid rgba(6,181,211,0.5)', borderRadius: 8, color: '#fff' }} itemStyle={{ color: '#fff' }} />
                                 </PieChart>
                             </ResponsiveContainer>
                         ) : (
@@ -194,7 +186,6 @@ const DashboardPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Recent Complaints table */}
                 <div className="glow-panel flex flex-col overflow-hidden min-h-0">
                     <div className="p-4 border-b border-cyan-500/20 flex items-center justify-between bg-black/20 shrink-0">
                         <h3 className="text-sm font-semibold glow-text">Recent Complaints</h3>
@@ -231,7 +222,6 @@ const DashboardPage: React.FC = () => {
                     </div>
                 </div>
             </div>
-
         </div>
     );
 };

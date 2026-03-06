@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Wrench, AlertTriangle, Upload, Send, Shield, Activity, FileText } from 'lucide-react';
-import api from '../services/api';
+import { complaintService } from '../services/supabaseService';
 import PageTransition from '../components/PageTransition';
 import ThemeToggle from '../components/ThemeToggle';
 
@@ -101,17 +101,10 @@ const HomePage: React.FC = () => {
         setIsSubmitting(true);
 
         try {
-            const formData = new FormData();
-            Object.entries(form).forEach(([key, val]) => formData.append(key, val));
-            if (imageFile) formData.append('image', imageFile);
-
-            const { data } = await api.post('/complaints', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
-
+            const data = await complaintService.createComplaint(form, imageFile);
             navigate(`/success/${data.id}`);
         } catch (err: any) {
-            setError(err.response?.data?.error || err.response?.data?.details?.[0]?.message || 'Failed to submit complaint.');
+            setError(err.message || 'Failed to submit complaint.');
         } finally {
             setIsSubmitting(false);
         }
@@ -119,7 +112,6 @@ const HomePage: React.FC = () => {
 
     return (
         <PageTransition className="min-h-screen bg-transparent text-white selection:bg-cyan-500/30">
-            {/* Header */}
             <header className="glow-panel rounded-none border-x-0 border-t-0 sticky top-0 z-50">
                 <div className="w-full max-w-[1600px] mx-auto px-6 lg:px-16 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -144,9 +136,7 @@ const HomePage: React.FC = () => {
                 </div>
             </header>
 
-            {/* Main Content Area */}
             <main className="w-full max-w-[1600px] mx-auto px-6 lg:px-12 py-12 lg:py-20 grid grid-cols-1 lg:grid-cols-2 gap-16 xl:gap-24 relative z-10">
-                {/* Left Side: Hero Info */}
                 <div className="flex flex-col justify-center sticky top-28 h-fit">
                     <div className="inline-flex items-center gap-2 bg-cyan-500/20 border border-cyan-500/30 rounded-full px-4 py-2 mb-6 w-fit">
                         <span className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
@@ -184,7 +174,6 @@ const HomePage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Right Side: Form */}
                 <div className="w-full max-w-[800px] mx-auto lg:mx-0 lg:ml-auto">
                     <form onSubmit={handleSubmit} className="glow-panel p-8 lg:p-12 space-y-8">
                         {error && (
@@ -194,21 +183,18 @@ const HomePage: React.FC = () => {
                             </div>
                         )}
 
-                        {/* Title */}
                         <div>
                             <label className="block text-sm font-medium text-cyan-100/70 mb-2">Complaint Title *</label>
                             <input name="title" value={form.title} onChange={handleChange} required
                                 className="input-neon" placeholder="Brief title describing the issue" />
                         </div>
 
-                        {/* Description */}
                         <div>
                             <label className="block text-sm font-medium text-cyan-100/70 mb-2">Description *</label>
                             <textarea name="description" value={form.description} onChange={handleChange} required
                                 rows={4} className="input-neon resize-none" placeholder="Detailed description of the problem..." />
                         </div>
 
-                        {/* Category + Severity */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-cyan-100/70 mb-2">Category *</label>
@@ -235,7 +221,6 @@ const HomePage: React.FC = () => {
                             </div>
                         )}
 
-                        {/* Location */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-cyan-100/70 mb-2">State *</label>
@@ -256,7 +241,6 @@ const HomePage: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Contact */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-cyan-100/70 mb-2">Contact Number *</label>
@@ -270,7 +254,6 @@ const HomePage: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Image Upload */}
                         <div>
                             <label className="block text-sm font-medium text-cyan-100/70 mb-2">Upload Image (Optional)</label>
                             <div
@@ -294,7 +277,6 @@ const HomePage: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Submit */}
                         <button type="submit" disabled={isSubmitting}
                             className="btn-neon w-full flex items-center justify-center gap-2 py-4 text-lg">
                             {isSubmitting ? (

@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Search, Filter, Eye, ChevronLeft, ChevronRight, Download, FileText } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import api from '../../services/api';
+import { complaintService } from '../../services/supabaseService';
 
 interface Complaint {
     id: string;
@@ -14,8 +14,8 @@ interface Complaint {
     state: string;
     city: string;
     address: string;
-    createdAt: string;
-    assignedTo: { id: string; name: string } | null;
+    created_at: string;
+    assigned_to: { id: string; name: string } | null;
 }
 
 interface Pagination {
@@ -59,12 +59,10 @@ const ComplaintsPage: React.FC = () => {
     const fetchComplaints = async (page = 1) => {
         setLoading(true);
         try {
-            const params: any = { page, limit: 20, excludeStatus: 'RESOLVED' };
-            if (search) params.search = search;
-            if (filters.status) params.status = filters.status;
-            if (filters.severity) params.severity = filters.severity;
-            if (filters.category) params.category = filters.category;
-            const { data } = await api.get('/complaints', { params });
+            const f: any = { ...filters, excludeStatus: 'RESOLVED' };
+            if (search) f.search = search;
+
+            const data = await complaintService.getComplaints(f, page, 20);
             setComplaints(data.complaints || []);
             setPagination(data.pagination);
         } catch (err) {
@@ -89,19 +87,16 @@ const ComplaintsPage: React.FC = () => {
         setSearchParams({});
     };
 
-    // Fetch ALL complaints (no pagination) for export, with optional date filter
+    // Fetch ALL complaints (up to limit) for export, with optional date filter
     const fetchAllForExport = async (): Promise<Complaint[]> => {
-        const params: any = { limit: 1000 };
-        if (filters.status) params.status = filters.status;
-        if (filters.severity) params.severity = filters.severity;
-        const { data } = await api.get('/complaints', { params });
-        let list: Complaint[] = data.complaints || [];
-        if (dateFrom) list = list.filter(c => new Date(c.createdAt) >= new Date(dateFrom));
-        if (dateTo) list = list.filter(c => new Date(c.createdAt) <= new Date(dateTo + 'T23:59:59'));
-        return list;
+        const f: any = { ...filters };
+        const { complaints: list } = await complaintService.getComplaints(f, 1, 1000);
+        let result = list || [];
+        if (dateFrom) result = result.filter(c => new Date(c.created_at) >= new Date(dateFrom));
+        if (dateTo) result = result.filter(c => new Date(c.created_at) <= new Date(dateTo + 'T23:59:59'));
+        return result;
     };
 
-    // ── CSV Export ─────────────────────────────────────────────────────────────
     const exportCSV = async () => {
         setExporting(true);
         try {
@@ -110,8 +105,8 @@ const ComplaintsPage: React.FC = () => {
             const rows = list.map(c => [
                 c.id, c.title, c.category.replace(/_/g, ' '), c.severity,
                 c.status.replace(/_/g, ' '), c.city, c.state, c.address || '',
-                c.assignedTo?.name || 'Unassigned',
-                new Date(c.createdAt).toLocaleDateString('en-IN'),
+                c.assigned_to?.name || 'Unassigned',
+                new Date(c.created_at).toLocaleDateString('en-IN'),
             ]);
             const csvContent = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -126,14 +121,12 @@ const ComplaintsPage: React.FC = () => {
         }
     };
 
-    // ── PDF Export ─────────────────────────────────────────────────────────────
     const exportPDF = async () => {
         setExporting(true);
         try {
             const list = await fetchAllForExport();
             const doc = new jsPDF({ orientation: 'landscape' });
 
-            // Header
             doc.setFillColor(15, 15, 26);
             doc.rect(0, 0, 297, 297, 'F');
             doc.setTextColor(6, 182, 212);
@@ -154,8 +147,8 @@ const ComplaintsPage: React.FC = () => {
                     c.severity,
                     c.status.replace(/_/g, ' '),
                     `${c.city}, ${c.state}`,
-                    c.assignedTo?.name || 'Unassigned',
-                    new Date(c.createdAt).toLocaleDateString('en-IN'),
+                    c.assigned_to?.name || 'Unassigned',
+                    new Date(c.created_at).toLocaleDateString('en-IN'),
                 ]),
                 styles: { fontSize: 8, cellPadding: 3, textColor: [220, 220, 240], fillColor: [20, 20, 35] },
                 headStyles: { fillColor: [6, 60, 80], textColor: [6, 182, 212], fontStyle: 'bold' },
@@ -173,7 +166,6 @@ const ComplaintsPage: React.FC = () => {
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold glow-text">Complaints</h1>
-                {/* Export Buttons */}
                 <div className="flex items-center gap-2">
                     <button onClick={exportCSV} disabled={exporting}
                         className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/20 transition-all disabled:opacity-40"
@@ -190,17 +182,14 @@ const ComplaintsPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Filters */}
             <div className="glow-panel p-4 bg-black/40 space-y-3">
                 <form onSubmit={handleSearch} className="flex items-center gap-3 flex-wrap">
-                    {/* Search */}
                     <div className="relative flex-1 min-w-[180px]">
                         <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-cyan-400" />
                         <input value={search} onChange={(e) => setSearch(e.target.value)}
                             className="input-neon input-neon-with-icon py-2 w-full" placeholder="Search by title or ID..." />
                     </div>
 
-                    {/* Status */}
                     <select value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })}
                         className="input-neon py-2 w-36 shrink-0">
                         <option value="" className="bg-[#0A0A12]">All Status</option>
@@ -210,7 +199,6 @@ const ComplaintsPage: React.FC = () => {
                         <option value="ESCALATED" className="bg-[#0A0A12]">Escalated</option>
                     </select>
 
-                    {/* Severity */}
                     <select value={filters.severity} onChange={(e) => setFilters({ ...filters, severity: e.target.value })}
                         className="input-neon py-2 w-36 shrink-0">
                         <option value="" className="bg-[#0A0A12]">All Severity</option>
@@ -220,14 +208,12 @@ const ComplaintsPage: React.FC = () => {
                         <option value="CRITICAL" className="bg-[#0A0A12]">Critical</option>
                     </select>
 
-                    {/* Clear */}
                     <button type="button" onClick={clearFilters}
                         className="shrink-0 flex items-center gap-1.5 text-sm text-cyan-400 hover:text-cyan-300 transition-colors">
                         <Filter className="w-4 h-4" /> Clear
                     </button>
                 </form>
 
-                {/* Date Range Row */}
                 <div className="flex items-center gap-3 flex-wrap">
                     <span className="text-xs text-cyan-100/50 uppercase tracking-wider font-semibold shrink-0">Export Date Range:</span>
                     <div className="flex items-center gap-2">
@@ -244,7 +230,6 @@ const ComplaintsPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Table */}
             <div className="glow-panel overflow-hidden bg-black/20">
                 {loading ? (
                     <div className="flex items-center justify-center h-48">
@@ -274,8 +259,8 @@ const ComplaintsPage: React.FC = () => {
                                             <td className="py-3 px-4"><span className={severityBadge(c.severity)}>{c.severity}</span></td>
                                             <td className="py-3 px-4"><span className={statusBadge(c.status)}>{c.status.replace('_', ' ')}</span></td>
                                             <td className="py-3 px-4 text-sm text-cyan-100/50">{c.city}, {c.state}</td>
-                                            <td className="py-3 px-4 text-sm text-cyan-100/50">{c.assignedTo?.name || '—'}</td>
-                                            <td className="py-3 px-4 text-sm text-cyan-100/50">{new Date(c.createdAt).toLocaleDateString()}</td>
+                                            <td className="py-3 px-4 text-sm text-cyan-100/50">{c.assigned_to?.name || '—'}</td>
+                                            <td className="py-3 px-4 text-sm text-cyan-100/50">{new Date(c.created_at).toLocaleDateString()}</td>
                                             <td className="py-3 px-4">
                                                 <Link to={`/admin/complaints/${c.id}`} className="text-cyan-400 hover:text-cyan-300 transition-colors drop-shadow-[0_0_5px_rgba(6, 182, 212,0.8)]">
                                                     <Eye className="w-4 h-4" />
@@ -290,7 +275,6 @@ const ComplaintsPage: React.FC = () => {
                             </table>
                         </div>
 
-                        {/* Pagination */}
                         {pagination.pages > 1 && (
                             <div className="p-4 border-t border-cyan-500/20 flex items-center justify-between">
                                 <p className="text-sm text-cyan-100/50">

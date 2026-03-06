@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Search, Filter, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
-import api from '../../services/api';
+import { complaintService } from '../../services/supabaseService';
 
 interface Complaint {
     id: string;
@@ -11,8 +11,8 @@ interface Complaint {
     status: string;
     state: string;
     city: string;
-    createdAt: string;
-    assignedTo: { id: string; name: string } | null;
+    created_at: string;
+    assigned_to: { id: string; name: string } | null;
 }
 
 interface Pagination {
@@ -45,7 +45,7 @@ const HistoryPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState(searchParams.get('search') || '');
     const [filters, setFilters] = useState({
-        status: searchParams.get('status') || '',
+        status: searchParams.get('status') || 'RESOLVED',
         severity: searchParams.get('severity') || '',
         category: searchParams.get('category') || '',
     });
@@ -53,13 +53,11 @@ const HistoryPage: React.FC = () => {
     const fetchComplaints = async (page = 1) => {
         setLoading(true);
         try {
-            const params: any = { page, limit: 20, status: 'RESOLVED' };
-            if (search) params.search = search;
-            if (filters.severity) params.severity = filters.severity;
-            if (filters.category) params.category = filters.category;
+            const filterParams: any = { ...filters };
+            if (search) filterParams.search = search;
 
-            const { data } = await api.get('/complaints', { params });
-            setComplaints(data.complaints || []);
+            const data = await complaintService.getComplaints(filterParams, page, 20);
+            setComplaints(data.complaints as Complaint[] || []);
             setPagination(data.pagination);
         } catch (err) {
             console.error('Error:', err);
@@ -77,7 +75,7 @@ const HistoryPage: React.FC = () => {
 
     const clearFilters = () => {
         setSearch('');
-        setFilters({ status: '', severity: '', category: '' });
+        setFilters({ status: 'RESOLVED', severity: '', category: '' });
         setSearchParams({});
     };
 
@@ -85,7 +83,6 @@ const HistoryPage: React.FC = () => {
         <div className="space-y-6">
             <h1 className="text-2xl font-bold glow-text">Complaint History</h1>
 
-            {/* Filters */}
             <div className="glow-panel p-4 bg-black/40">
                 <div className="flex flex-wrap gap-3 items-center">
                     <form onSubmit={handleSearch} className="flex-1 min-w-[200px] relative">
@@ -109,7 +106,6 @@ const HistoryPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Table */}
             <div className="glow-panel overflow-hidden bg-black/20">
                 {loading ? (
                     <div className="flex items-center justify-center h-48">
@@ -139,8 +135,8 @@ const HistoryPage: React.FC = () => {
                                             <td className="py-3 px-4"><span className={severityBadge(c.severity)}>{c.severity}</span></td>
                                             <td className="py-3 px-4"><span className={statusBadge(c.status)}>{c.status.replace('_', ' ')}</span></td>
                                             <td className="py-3 px-4 text-sm text-cyan-100/50">{c.city}, {c.state}</td>
-                                            <td className="py-3 px-4 text-sm text-cyan-100/50">{c.assignedTo?.name || '—'}</td>
-                                            <td className="py-3 px-4 text-sm text-cyan-100/50">{new Date(c.createdAt).toLocaleDateString()}</td>
+                                            <td className="py-3 px-4 text-sm text-cyan-100/50">{c.assigned_to?.name || '—'}</td>
+                                            <td className="py-3 px-4 text-sm text-cyan-100/50">{new Date(c.created_at).toLocaleDateString()}</td>
                                             <td className="py-3 px-4">
                                                 <Link to={`/admin/complaints/${c.id}`} className="text-cyan-400 hover:text-cyan-300 transition-colors drop-shadow-[0_0_5px_rgba(6, 182, 212,0.8)]">
                                                     <Eye className="w-4 h-4" />
@@ -155,7 +151,6 @@ const HistoryPage: React.FC = () => {
                             </table>
                         </div>
 
-                        {/* Pagination */}
                         {pagination.pages > 1 && (
                             <div className="p-4 border-t border-cyan-500/20 flex items-center justify-between">
                                 <p className="text-sm text-cyan-100/50">

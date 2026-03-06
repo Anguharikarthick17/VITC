@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Users as UsersIcon, Plus, Trash2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import api from '../../services/api';
+import { userService } from '../../services/supabaseService';
 
 interface UserData {
     id: string;
@@ -9,7 +9,7 @@ interface UserData {
     email: string;
     role: string;
     state: string | null;
-    createdAt: string;
+    created_at: string;
     _count: { assignedComplaints: number };
 }
 
@@ -23,8 +23,8 @@ const UsersPage: React.FC = () => {
 
     const fetchUsers = async () => {
         try {
-            const { data } = await api.get('/users');
-            setUsers(data);
+            const data = await userService.getUsers();
+            setUsers(data as UserData[]);
         } catch (err) {
             console.error(err);
         } finally {
@@ -38,22 +38,22 @@ const UsersPage: React.FC = () => {
         e.preventDefault();
         setError('');
         try {
-            await api.post('/auth/register', { ...form, state: form.state || undefined });
+            await userService.createUser(form);
             setShowForm(false);
             setForm({ name: '', email: '', password: '', role: 'OFFICER', state: '' });
             fetchUsers();
         } catch (err: any) {
-            setError(err.response?.data?.error || 'Failed to create user');
+            setError(err.message || 'Failed to create user');
         }
     };
 
     const handleDelete = async (id: string) => {
         if (!confirm('Delete this user?')) return;
         try {
-            await api.delete(`/users/${id}`);
+            await userService.deleteUser(id);
             fetchUsers();
         } catch (err: any) {
-            alert(err.response?.data?.error || 'Delete failed');
+            alert(err.message || 'Delete failed');
         }
     };
 

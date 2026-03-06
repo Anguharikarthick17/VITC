@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Wrench, Search, Clock, AlertTriangle, ArrowLeft, User } from 'lucide-react';
-import api from '../services/api';
+import { complaintService } from '../services/supabaseService';
 import PageTransition from '../components/PageTransition';
 
 interface TimelineEntry {
     action: string;
-    performedBy: string;
+    performed_by: { name: string; role: string } | null;
     timestamp: string;
 }
 
@@ -19,10 +19,10 @@ interface ComplaintData {
     state: string;
     city: string;
     address: string;
-    assignedTo: { name: string; role: string } | null;
-    createdAt: string;
-    updatedAt: string;
-    timeline: TimelineEntry[];
+    assigned_to: { name: string; role: string } | null;
+    created_at: string;
+    updated_at: string;
+    logs: TimelineEntry[];
 }
 
 const statusBadge = (status: string) => {
@@ -54,25 +54,29 @@ const TrackingPage: React.FC = () => {
 
     useEffect(() => {
         if (searchParams.get('id')) {
-            handleSearch();
+            performSearch(searchParams.get('id') || '');
         }
-    }, []);
+    }, [searchParams]);
 
-    const handleSearch = async (e?: React.FormEvent) => {
-        e?.preventDefault();
-        if (!complaintId.trim()) return;
+    const performSearch = async (id: string) => {
+        if (!id.trim()) return;
         setLoading(true);
         setError('');
         setComplaint(null);
 
         try {
-            const { data } = await api.get(`/complaints/track/${complaintId.trim()}`);
+            const data = await complaintService.trackComplaint(id.trim());
             setComplaint(data);
         } catch (err: any) {
-            setError(err.response?.data?.error || 'Complaint not found. Please check the ID.');
+            setError(err.message || 'Complaint not found. Please check the ID.');
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        performSearch(complaintId);
     };
 
     return (
@@ -88,7 +92,7 @@ const TrackingPage: React.FC = () => {
                             <p className="text-xs text-cyan-400 font-medium drop-shadow-[0_0_5px_rgba(6, 182, 212,0.5)]">Track Complaint</p>
                         </div>
                     </div>
-                    <Link to="/report" className="flex items-center gap-2 text-cyan-400/70 hover:text-cyan-300 hover:drop-shadow-[0_0_8px_rgba(34, 211, 238,0.8)] transition-all text-sm">
+                    <Link to="/" className="flex items-center gap-2 text-cyan-400/70 hover:text-cyan-300 hover:drop-shadow-[0_0_8px_rgba(34, 211, 238,0.8)] transition-all text-sm">
                         <ArrowLeft className="w-4 h-4" /> Back to Home
                     </Link>
                 </div>
@@ -121,7 +125,6 @@ const TrackingPage: React.FC = () => {
 
                 {complaint && (
                     <div className="mt-8 space-y-6">
-                        {/* Status Header */}
                         <div className="glow-panel p-6">
                             <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
                                 <div>
@@ -145,13 +148,13 @@ const TrackingPage: React.FC = () => {
                                 </div>
                                 <div>
                                     <p className="text-xs text-cyan-100/50 uppercase">Date Filed</p>
-                                    <p className="text-sm text-white mt-1 drop-shadow-[0_0_2px_rgba(255,255,255,0.5)]">{new Date(complaint.createdAt).toLocaleDateString()}</p>
+                                    <p className="text-sm text-white mt-1 drop-shadow-[0_0_2px_rgba(255,255,255,0.5)]">{new Date(complaint.created_at).toLocaleDateString()}</p>
                                 </div>
                                 <div>
                                     <p className="text-xs text-cyan-100/50 uppercase">Assigned Officer</p>
                                     <p className="text-sm text-white mt-1 flex items-center gap-1 drop-shadow-[0_0_2px_rgba(255,255,255,0.5)]">
-                                        {complaint.assignedTo ? (
-                                            <><User className="w-3 h-3 text-cyan-400" /> {complaint.assignedTo.name}</>
+                                        {complaint.assigned_to ? (
+                                            <><User className="w-3 h-3 text-cyan-400" /> {complaint.assigned_to.name}</>
                                         ) : (
                                             <span className="text-cyan-100/50">Unassigned</span>
                                         )}
@@ -160,22 +163,21 @@ const TrackingPage: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Timeline */}
                         <div className="glow-panel p-6">
                             <h3 className="text-lg font-semibold glow-text mb-4 flex items-center gap-2">
                                 <Clock className="w-5 h-5 text-cyan-400 drop-shadow-[0_0_5px_rgba(6, 182, 212,0.8)]" /> Timeline
                             </h3>
                             <div className="space-y-0 relative before:absolute before:inset-0 before:ml-1.5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-cyan-500/50 before:to-transparent">
-                                {complaint.timeline.map((entry, i) => (
+                                {complaint.logs.map((entry, i) => (
                                     <div key={i} className="flex gap-4 relative z-10">
                                         <div className="flex flex-col items-center">
                                             <div className={`w-3 h-3 rounded-full shadow-[0_0_8px_rgba(6, 182, 212,0.8)] ${i === 0 ? 'bg-cyan-400 animate-pulse' : 'bg-cyan-500/30 border border-cyan-500/50'}`} />
-                                            {i < complaint.timeline.length - 1 && <div className="w-0.5 flex-1 bg-cyan-500/20" />}
+                                            {i < complaint.logs.length - 1 && <div className="w-0.5 flex-1 bg-cyan-500/20" />}
                                         </div>
                                         <div className="pb-6">
                                             <p className="text-white text-sm font-medium drop-shadow-[0_0_2px_rgba(255,255,255,0.5)]">{entry.action}</p>
                                             <p className="text-xs text-cyan-100/50 mt-1">
-                                                {entry.performedBy} · {new Date(entry.timestamp).toLocaleString()}
+                                                {entry.performed_by?.name || 'System'} · {new Date(entry.timestamp).toLocaleString()}
                                             </p>
                                         </div>
                                     </div>

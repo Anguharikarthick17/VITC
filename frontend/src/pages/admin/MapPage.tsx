@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Map } from 'lucide-react';
-import api from '../../services/api';
+import { Map as MapIcon } from 'lucide-react';
+import { complaintService } from '../../services/supabaseService';
 
 // Fix leaflet default icon issue with bundlers
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -26,7 +26,7 @@ interface Complaint {
     state: string;
     city: string;
     address: string;
-    createdAt: string;
+    created_at: string;
 }
 
 // Approximate lat/lng lookup for Indian states
@@ -81,7 +81,7 @@ const MapPage: React.FC = () => {
         const fetchAll = async () => {
             setLoading(true);
             try {
-                const { data } = await api.get('/complaints', { params: { limit: 500 } });
+                const data = await complaintService.getComplaints({}, 1, 500);
                 setComplaints(data.complaints || []);
             } catch (err) {
                 console.error(err);
@@ -107,14 +107,12 @@ const MapPage: React.FC = () => {
 
     return (
         <div className="flex flex-col gap-4 h-full min-h-0">
-            {/* Header */}
             <div className="flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2">
-                    <Map className="w-6 h-6 text-cyan-400 drop-shadow-[0_0_8px_rgba(6, 182, 212,0.8)]" />
+                    <MapIcon className="w-6 h-6 text-cyan-400 drop-shadow-[0_0_8px_rgba(6, 182, 212,0.8)]" />
                     <h1 className="text-2xl font-bold glow-text">Complaint Map</h1>
                 </div>
                 <div className="flex items-center gap-3">
-                    {/* View toggle */}
                     <div className="flex items-center gap-1 bg-black/40 border border-cyan-500/30 rounded-lg p-1">
                         <button onClick={() => setViewMode('pins')}
                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${viewMode === 'pins' ? 'bg-cyan-500/20 text-cyan-300 shadow-[0_0_10px_rgba(6, 182, 212,0.4)]' : 'text-gray-400 hover:text-gray-200'}`}>
@@ -125,7 +123,6 @@ const MapPage: React.FC = () => {
                             🔥 Heatmap
                         </button>
                     </div>
-                    {/* Filters */}
                     <select value={filterSeverity} onChange={e => setFilterSeverity(e.target.value)}
                         className="input-neon py-1.5 px-2 text-xs w-32">
                         <option value="" className="bg-[#0A0A12]">All Severity</option>
@@ -146,7 +143,6 @@ const MapPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Legend */}
             <div className="flex items-center gap-4 shrink-0">
                 {viewMode === 'pins' ? (
                     <>
@@ -163,7 +159,6 @@ const MapPage: React.FC = () => {
                 )}
             </div>
 
-            {/* Map */}
             <div className="flex-1 min-h-0 rounded-xl overflow-hidden border border-cyan-500/30 shadow-[0_0_20px_rgba(6, 182, 212,0.15)]" style={{ minHeight: '400px' }}>
                 {loading ? (
                     <div className="flex items-center justify-center h-full bg-[#0A0A12]">
@@ -184,7 +179,6 @@ const MapPage: React.FC = () => {
                         {viewMode === 'pins' && filtered.map((c) => {
                             const coords = STATE_COORDS[c.state];
                             if (!coords) return null;
-                            // Jitter pins slightly so they don't stack exactly
                             const jitter = (): [number, number] => [
                                 coords[0] + (Math.random() - 0.5) * 2,
                                 coords[1] + (Math.random() - 0.5) * 2,
@@ -211,7 +205,7 @@ const MapPage: React.FC = () => {
                                                 <div>🏷️ {c.category.replace(/_/g, ' ')}</div>
                                                 <div style={{ color: SEVERITY_COLOR[c.severity], fontWeight: 'bold' }}>⚠️ {c.severity}</div>
                                                 <div>📋 {c.status.replace(/_/g, ' ')}</div>
-                                                <div style={{ color: '#888' }}>📅 {new Date(c.createdAt).toLocaleDateString('en-IN')}</div>
+                                                <div style={{ color: '#888' }}>📅 {new Date(c.created_at).toLocaleDateString('en-IN')}</div>
                                             </div>
                                         </div>
                                     </Popup>
